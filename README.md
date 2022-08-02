@@ -364,9 +364,151 @@ Parent component recieve product data and push it into a cart product array. Thi
 
 ### Understanding services
 
+📖 https://angular.io/tutorial/toh-pt4
+
+Components shouldn't fetch or save data directly and they certainly shouldn't knowingly present fake data. They should focus on presenting data and delegate data access to a service.
+
+Services are a great way to share information among classes that don't know each other.
+
+Use Angular CLI to create a new service
+
+```
+ng g s services/store
+```
+
+All the operation functions are moved to the service.
+
+To use the service functionality into the component, an import is needed
+
+```ts
+// ../<component-name>.component.ts
+import { StoreService } from '../../services/store.service'; 👈
+
+  ...
+
+  constructor(private storeService: StoreService) {} 👈
+
+    ...
+```
+
 ### What is dependency injection?
 
+In software engineering, **singleton** or single instance is a design pattern that restricts the creation of objects belonging to a class or the value of a type to a single object. It is intended to ensure that a class has only one instance and to provide a global access point to it.
+
+If two components import one service, Angular creates only one instance of that service and use it to provide both components.
+
+This injection pattern allow services to import other services, but if service A imports service B, service B can't import service A. Circular injection is not supported.
+
 ### Getting data from an API
+
+📖 https://angular.io/guide/http
+
+Most front-end applications need to communicate with a server over the HTTP protocol, to download or upload data and access other back-end services. Angular provides a client HTTP API for Angular applications, the `HttpClient` service class in `@angular/common/http`.
+
+Use Angular CLI to create a new service
+
+```
+ng g s services/products
+```
+
+Import Http Module in `app.module.ts` file
+
+```ts
+// src/app.module.ts
+
+import { HttpClientModule } from '@angular/common/http'; 👈
+
+...
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ImgComponent,
+    ProductComponent,
+    ProductsComponent,
+    NavComponent,
+  ],
+  imports: [BrowserModule, AppRoutingModule, FormsModule, HttpClientModule], 👈
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+```
+
+Create http request into the service file. For example:
+
+```ts
+// src/app/services/product.service.ts
+
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http"; 👈
+
+@Injectable({
+  providedIn: "root",
+})
+export class ProductsService {
+  constructor(private http: HttpClient) {} 👈
+
+  getAllProducts() {
+    return this.http.get("http://fakestoreapi.com/products"); 👈
+  }
+}
+```
+
+```ts
+// src/app/components/products/products.service.ts
+
+import { Component, OnInit } from '@angular/core';
+
+import { Product } from '../../models/product.model';
+import { StoreService } from '../../services/store.service';
+import { ProductsService } from '../../services/products.service'; 👈
+
+@Component({
+  selector: 'app-products',
+  templateUrl: './products.component.html',
+  styleUrls: ['./products.component.scss'],
+})
+export class ProductsComponent implements OnInit {
+  myShoppingCart: Product[] = [];
+  total: number = 0;
+  products: Product[] = []; 👈
+
+  constructor(
+    private storeService: StoreService,
+    private productsService: ProductsService 👈
+  ) {
+    this.myShoppingCart = this.storeService.getShoppingCart();
+  }
+  ngOnInit(): void {
+    this.productsService.getAllProducts().subscribe((data) => { 👈
+      this.products = data;
+    });
+  }
+
+  onAddToCart(product: Product) {
+    this.storeService.addProduct(product);
+    this.total = this.storeService.getTotal();
+  }
+}
+
+```
+
+The model should match with the data type obtained from the API
+
+```ts
+// src/app/models/product.model.ts
+
+export interface Product {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  description: string;
+  category: string;
+}
+```
 
 ## Pipes and Directives
 
