@@ -291,13 +291,74 @@ export class ComponentName
 
 ### ngDestroy &amp; SetInput
 
+Processes that continues running when are destroyed, needs to be stoped.
+
+Example:
+
+```ts
+// ../<component-name>.component.ts
+
+export class ComponentName implements OnInit, OnDestroy {
+  counter = 0;
+  counterFunction: number | undefined;
+
+  ngOnInit(): void {
+    this.counterFunction = window.setInterval(() => {
+      this.counter += 1;
+      console.log("counter running");
+    }, 1000);
+    // setInterval continues running even if it is destroyed, it needs to be stopped
+  }
+
+  ngOnDestroy(): void {
+    window.clearInterval(this.counterFunction); // make interval to stop running on destroy
+  }
+}
+```
+
+Changes can be verified with `@SimpleChanges` decorator
+
+```ts
+// ../<component-name>.component.ts
+
+  ngOnChanges(changes: SimpleChanges): void {
+    console.log('changes', changes);
+  }
+```
+
 ### Product List
+
+Use Angular CLI to create a new component for the products grid
+
+```
+ng g c components/products
+```
+
+This new component renderize the product grid
+
+Reeorganize components with correct functionality
 
 ### Components and Header
 
+Styles has their own scope. It is not possible to change Child components styles from Parent components style files.
+
+For doing this, the global style `/src/styles.scss` is employed.
+
+Use Angular CLI to create a new component for the header
+
+```
+ng g c components/nav
+```
+
 ### Implementing the sideMenu
 
+Add html and css for sidebar menu.
+
 ### Parent and child communication
+
+A new button is added into product component to add products to shopping cart. This component is conected to the parent component, products, to send product added data.
+
+Parent component recieve product data and push it into a cart product array. This new array is used to handle the amount, the total price and the list of added products.
 
 ## Services
 
@@ -320,3 +381,7 @@ export class ComponentName
 ### Basic reactivity
 
 ### Angular style guide and linters
+
+```
+
+```
