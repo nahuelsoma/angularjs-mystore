@@ -3,6 +3,8 @@
   <app-product [product]="product" *ngFor="let product of products" (addedProduct)="onAddToCart($event)"></app-product>
 </div>
 <h2>Cart Product List:</h2>
+<p>{{ today | date: 'fullDate' }}</p>
+<p>{{ date | timeAgo }}</p>
 <p>Products: {{ myShoppingCart.length }}</p>
 <p>Total Price: ${{ total }}</p>
 <p *ngFor="let product of myShoppingCart">{{ product.title }}</p>

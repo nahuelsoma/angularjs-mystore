@@ -69,7 +69,7 @@ export class ImgComponent
   }
 
   ngOnDestroy(): void {
-    // run on component delete
+    // run on component delete from the DOM
     // console.log('ngOnDestroy', 'img value:', this.img);
     // window.clearInterval(this.counterFunction); // make interval to stop running on destroy
   }

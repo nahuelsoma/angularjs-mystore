@@ -514,16 +514,237 @@ export interface Product {
 
 ### Understanding pipes
 
+📖 https://angular.io/guide/pipes
+
+Use pipes to transform strings, currency amounts, dates, and other data for display. Pipes are simple functions to use in template expressions to accept an input value and return a transformed value. Pipes are useful because you can use them throughout your application, while only declaring each pipe once. For example, you would use a pipe to show a date as April 15, 1988 rather than the raw string format.
+
+Pipes are implemented into html files.
+
+For example, date types can be personalized to display a custom format.
+
+📖 https://angular.io/api/common/DatePipe
+
+All pipes can be explored in Angular documentation
+
+📖 https://angular.io/api?type=pipe
+
 ### Building your own pipe
 
+Use Angular CLI to create a new pipe
+
+```
+ng g p pipes/reverse
+```
+
+In the `reverse.pipe.ts` file:
+
+```ts
+// src/app/pipes/reverse.pipe.ts
+
+import { Pipe, PipeTransform } from "@angular/core";
+
+@Pipe({
+  name: "reverse", 👈
+})
+export class ReversePipe implements PipeTransform {
+  transform(value: string): string {
+    return value.split("").reverse().join("");
+  }
+}
+```
+
+It can be used into an html component file like this:
+
+```html
+<!-- src/app/components/product.component.html -->
+
+<app-img [imge]="product.image"></app-img>
+<p>{{ product.price | currency:'USD ' }}</p>
+<h3>{{ product.title | reverse 👈 }}</h3>
+<button (click)="addToCart()">Add to cart</button>
+```
+
+date-fns is installed for perform another pipe example
+
+```
+npm i date-fns
+```
+
+Use Angular CLI to create a new pipe
+
+```
+ng g p pipes/timeAgo
+```
+
+In the `time-ago.pipe.ts` file:
+
+```ts
+// src/app/pipes/time-ago.pipe.ts
+
+import { Pipe, PipeTransform } from "@angular/core";
+import { formatDistance } from "date-fns";
+
+@Pipe({
+  name: "timeAgo", 👈
+})
+export class TimeAgoPipe implements PipeTransform {
+  transform(value: Date): string {
+    return formatDistance(new Date(), value);
+  }
+}
+```
+
+It can be used into an html component file like this:
+
+```html
+<!-- src/app/components/product.component.html -->
+
+<p>{{ date | timeAgo }}</p>
+```
+
 ### Getting to know directives
+
+📖 https://angular.io/guide/attribute-directives
+
+Attribute directives are useful to change the appearance or behavior of DOM elements and Angular components.
+
+Use Angular CLI to create a new pipe
+
+```
+ng g d directives/highlight
+```
+
+Customize the directive into the `src/app/directives/highlight.directive.ts`:
+
+```ts
+// src/app/directives/highlight.directive.ts
+
+import { Directive, ElementRef, HostListener } from "@angular/core";
+
+@Directive({
+  selector: "[appHighlight]",
+})
+export class HighlightDirective {
+  @HostListener("mouseenter") onMouseEnter() {
+    this.element.nativeElement.style.backgroundColor = "red";
+  }
+
+  @HostListener("mouseleave") onMouseLeave() {
+    this.element.nativeElement.style.backgroundColor = "green";
+  }
+
+  constructor(private element: ElementRef) {
+    this.element.nativeElement.style.backgroundColor = "yellow";
+  }
+}
+```
+
+It can be used into an html component file like this:
+
+```html
+<!-- src/app/components/product.component.html -->
+
+<app-img [imge]="product.image"></app-img>
+<p>{{ product.price | currency:'USD ' }}</p>
+<h3>{{ product.title | reverse }}</h3>
+<p appHighlight 👈>{{ product.description }}</p>
+<button (click)="addToCart()">Add to cart</button>
+```
 
 ## Best Practices
 
 ### Basic reactivity
 
-### Angular style guide and linters
+For data transmition into not adjacent components, observables can be utilized. This type of comunication utilize an storage, because of this import and export are not needed.
 
+<img src="./src/assets/image/state-management-angular.jpg">
+
+For example, an observable can be created into `store.service.ts` to send the shipping cart array to the navbar:
+
+```ts
+// src/app/services/store.service.ts
+
+import { Injectable } from "@angular/core";
+import { BehaviorSubject } from "rxjs"; 👈
+
+import { Product } from "../models/product.model";
+
+@Injectable({
+  providedIn: "root",
+})
+export class StoreService {
+  private myShoppingCart: Product[] = [];
+  private myCart = new BehaviorSubject<Product[]>([]); 👈
+
+  myCart$ = this.myCart.asObservable(); // new observable 👈
+
+  total: number = 0;
+
+  constructor() {}
+
+  addProduct(product: Product) {
+    this.myShoppingCart.push(product);
+    this.myCart.next(this.myShoppingCart); // notify all subscribers and send this.myShoppingCart data 👈
+  }
+
+  getShoppingCart() {
+    return this.myShoppingCart;
+  }
+
+  getTotal() {
+    return (this.total = this.myShoppingCart.reduce(
+      (sum, item) => sum + item.price,
+      0
+    ));
+  }
+}
 ```
 
+The nav component is going to subscribe and wait for shopping cart changes:
+
+```ts
+// src/app/components/nav.component.ts
+
+import { Component, OnInit } from "@angular/core";
+
+import { StoreService } from "../../services/store.service"; 👈
+
+@Component({
+  selector: "app-nav",
+  templateUrl: "./nav.component.html",
+  styleUrls: ["./nav.component.scss"],
+})
+export class NavComponent implements OnInit {
+  activeMenu = false;
+  counter = 0; 👈
+
+  constructor(private storeService: StoreService) {} 👈
+
+  ngOnInit(): void {
+    // subscribe and await for changes 👈
+    this.storeService.myCart$.subscribe((products) => { 👈
+      this.counter = products.length;
+    });
+  }
+
+  toggleMenu() {
+    this.activeMenu = !this.activeMenu;
+  }
+}
+```
+
+### Angular style guide and linters
+
+📖 https://angular.io/guide/styleguide
+
+To add a lint from angular:
+
+```
+ng add @angular-eslint/schematics
+```
+
+To check for optimization and good practices, run
+
+```
+ng lint
 ```
