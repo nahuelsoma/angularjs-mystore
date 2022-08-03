@@ -1,11 +1,32 @@
-
+<button (click)="createNewProduct()">Create product</button>
 <div class="products--grid">
-  <app-product [product]="product" *ngFor="let product of products" (addedProduct)="onAddToCart($event)"></app-product>
+  <app-product [product]="product"
+    *ngFor="let product of products"
+    (addedProduct)="onAddToCart($event)"
+    (showProduct)="onShowDetail($event)"
+    >
+  </app-product>
+  <button (click)="loadMore()">Load more products</button>
 </div>
-<h2>Cart Product List:</h2>
-<p>{{ today | date: 'fullDate' }}</p>
-<p>{{ date | timeAgo }}</p>
-<p>Products: {{ myShoppingCart.length }}</p>
-<p>Total Price: ${{ total }}</p>
-<p *ngFor="let product of myShoppingCart">{{ product.title }}</p>
+<div class="product-detail" [class.active]="showProductDetail">
+  <div *ngIf="productChosen">
+    <button (click)="toggleProductDetail()">Close</button>
+    <h2>{{ productChosen.title }}</h2>
+    <swiper [slidesPerView]="1">
+      <ng-template swiperSlide *ngFor="let img of productChosen.images">
+        <img [src]="img" [alt]="productChosen.title">
+      </ng-template>
+    </swiper>
+    <p>{{ productChosen.description }}</p>
+    <button (click)="updateProduct()">Edit product</button>
+    <button (click)="deleteProduct()">Delete product</button>
+  </div>
+</div>
+
+<!-- <h2>Cart Product List:</h2> -->
+<!-- <p>{{ today | date: 'fullDate' }}</p> -->
+<!-- <p>{{ date | timeAgo }}</p> -->
+<!-- <p>Products: {{ myShoppingCart.length }}</p> -->
+<!-- <p>Total Price: ${{ total }}</p> -->
+<!-- <p *ngFor="let product of myShoppingCart">{{ product.title }}</p> -->
 

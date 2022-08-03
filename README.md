@@ -1,8 +1,10 @@
-# Angular Course: Components and Services
-
-This repository contains the project developed in the second part of the Angular course.
+This repository contains the project developed in the second and third part of the Angular course.
 
 The following is a step-by-step description of what was learned in each class.
+
+---
+
+# Angular Course: Components and Services
 
 ## Components
 
@@ -748,3 +750,348 @@ To check for optimization and good practices, run
 ```
 ng lint
 ```
+
+---
+
+# Angular Course: REST API consumption
+
+## Http Basic
+
+### GET Requests
+
+Review the http request into the product service file:
+
+```ts
+// src/app/services/product.service.ts
+
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http"; 👈
+
+@Injectable({
+  providedIn: "root",
+})
+export class ProductsService {
+  constructor(private http: HttpClient) {} 👈
+
+  getAllProducts() {
+    return this.http.get("http://fakestoreapi.com/products"); 👈
+  }
+}
+```
+
+### Product detail
+
+To get a single product detail, the get request is performed:
+
+```ts
+// src/app/components/products/products.component.ts
+
+export class ProductsComponent implements OnInit {
+  ...
+
+  onShowDetail(id: string) {
+    this.productsService
+      .getProduct(id) 👈
+      .subscribe((data) => console.log('product', data));
+  }
+}
+```
+
+```ts
+// src/app/services/product.service.ts
+
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http"; 👈
+import { Product } from "../models/product.model";
+
+@Injectable({
+  providedIn: "root",
+})
+export class ProductsService {
+  constructor(private http: HttpClient) {} 👈
+
+  private apiUrl = "https://young-sands-07814.herokuapp.com/api/products"; 👈
+
+  getAllProducts() {
+    return this.http.get<Product[]>(this.apiUrl);
+  }
+
+  getProduct(id: string) { 👈
+    return this.http.get<Product>(`${this.apiUrl}/${id}`); 👈
+  }
+}
+```
+
+### Creating slides
+
+Swiper library is used to display slides
+
+📖 https://swiperjs.com/angular
+
+```
+npm i swiper
+```
+
+Import SwiperModule module into `src/app.module.ts` file
+
+```ts
+// src/app.module.ts
+
+import { SwiperModule } from "swiper/angular"; 👈
+
+@NgModule({
+  imports: [SwiperModule], 👈
+})
+export class YourAppModule {}
+```
+
+And into the `src/styles.scss` file
+
+```scss
+// src/styles.scss;
+
+@import "swiper/css/bundle"; 👈
+```
+
+Then, manage data into the products.component.ts file:
+
+```ts
+// src/app/components/products/products.component.ts
+
+...
+
+export class ProductsComponent implements OnInit {
+  ...
+
+  productChosen!: Product; 👈
+
+  ...
+
+  onShowDetail(id: string) { 👈
+    this.productsService.getProduct(id).subscribe((data) => { 👈
+      this.toggleProductDetail();
+      this.productChosen = data;
+    });
+  }
+```
+
+And use it into the `products.component.html` file:
+
+```html
+<!-- src/app/components/products/products.component.html -->
+
+<div class="product-detail" [class.active]="showProductDetail">
+  <div *ngIf="productChosen">
+    <button (click)="toggleProductDetail()">Close</button>
+    <h2>{{ productChosen.title }}</h2>
+    <swiper 👈 [slidesPerView]="1">
+      <ng-template swiperSlide *ngFor="let img of productChosen.images">
+        <img [src]="img" [alt]="productChosen.title" />
+      </ng-template>
+    </swiper>
+    <p>{{ productChosen.description }}</p>
+  </div>
+</div>
+```
+
+### POST requests
+
+The first step to send a post request is create its dto into the models file:
+
+```ts
+// src/app/models/product.model.ts
+
+export interface Category {
+  id: string;
+  name: string;
+}
+
+export interface Product {
+  id: string;
+  title: string;
+  price: number;
+  images: string[];
+  description: string;
+  category: Category;
+}
+
+export interface CreateProductDto extends Omit<Product, "id" | "category"> { 👈
+  categoryId: number; 👈
+}
+```
+
+The post request is shown into the `products.service.ts` file:
+
+```ts
+// src/app/services/products.service.ts
+
+  import { Product, CreateProductDto } from '../models/product.model'; 👈
+
+  ...
+
+  create(dto: CreateProductDto) { 👈
+    return this.http.post<Product>(this.apiUrl, dto); 👈
+  }
+}
+```
+
+This request is configured into the `products.component.ts` file:
+
+```ts
+// src/app/components/products/products.component.ts
+
+import { Product, CreateProductDto } from '../../models/product.model'; 👈
+
+...
+
+  createNewProduct() { 👈
+    const product: CreateProductDto = {
+      title: 'The product to be found 513213513541',
+      description: 'The product description',
+      price: 100,
+      images: ['https://placeimg.com/640/480/any'],
+      categoryId: 1,
+    };
+    this.productsService.create(product).subscribe((data) => { 👈
+      this.products.unshift(data);
+    });
+  }
+```
+
+_The product info is created into the function for a didactical purpose._
+
+This function is excecuted by a button click into the `products.component.html` file:
+
+```html
+<!-- src/app/components/products/products.component.html -->
+
+<button (click)="createNewProduct()">Create product</button> 👈
+```
+
+### PUT and PATCH requests
+
+Put and patch requests follow the same logic as get and post.
+
+### DELETE requests
+
+Delete request follow the same logic as previous requests.
+
+### Url Parameters / Pagination
+
+Params are send to the API this way:
+
+```ts
+// src/app/services/products.service.ts
+
+  getProductsByPage(limit: number, offset: number) {
+    return this.http.get<Product[]>(this.apiUrl, { 👈
+      params: { limit, offset }, 👈
+    });
+  }
+```
+
+This request is configured into the `products.component.ts` file:
+
+```ts
+// src/app/components/products/products.component.ts
+
+export class ProductsComponent implements OnInit {
+
+  ...
+
+  limit = 8; 👈
+  offset = 0; 👈
+
+  ...
+
+  ngOnInit(): void {
+
+    ...
+
+  }
+
+  loadMore() { 👈
+    this.productsService
+      .getProductsByPage(this.limit, this.offset) 👈
+      .subscribe((data) => {
+        this.products = this.products.concat(data); 👈
+        this.offset += this.limit; 👈
+      });
+  }
+
+```
+
+This function is excecuted by a button click into the `products.component.html` file:
+
+```html
+<!-- src/app/components/products/products.component.html -->
+
+<button (click)="loadMore()">Load more products</button> 👈
+```
+
+### Observable vs. Promise
+
+- Observable:
+  - Omitting / answering multiple responses.
+  - Transmission of multiple data
+  - Allows data transformations and unsubscription
+  - Allows to transform the response (pipes)
+  - Continuous listening possible : events / responsive / fetches
+- Promise:
+  - Returns a single response
+  - Runs only once
+  - Simplicity
+
+### Retrying a request
+
+For retry requests can be done into the `products.component.ts` file:
+
+```ts
+// src/app/components/products/products.component.ts
+
+import { retry } from 'rxjs';
+
+  ...
+
+  getAllProducts(limit?: number, offset?: number) {
+    let params = new HttpParams();
+    if (limit && (offset || offset === 0)) {
+      params = params.set('limit', limit);
+      params = params.set('offset', offset);
+    }
+    return this.http.get<Product[]>(this.apiUrl, { params }).pipe(retry(3)); // retry request 3 times (4 total) 👈
+  }
+
+```
+
+It is possible to implement `retryWhen`, from rxjs, to add a condition for the retry action.
+
+## Best Practices
+
+### The CORS Problem
+
+### Handling environments
+
+### Error handling
+
+### Transforming requests
+
+### Preventing callback hell
+
+## Auth
+
+### Login and Auth handling
+
+### Handling headers
+
+### Using interceptors
+
+### Sending token with an interceptor
+
+### Creating an interceptor context
+
+## Files
+
+### Downloading files with Http
+
+### Uploading files with Http
