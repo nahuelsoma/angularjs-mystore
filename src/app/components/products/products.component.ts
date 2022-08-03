@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import Swal from 'sweetalert2';
 
 import {
   Product,
@@ -20,9 +21,13 @@ export class ProductsComponent implements OnInit {
   // today = new Date();
   // date = new Date(2015, 1, 8);
   showProductDetail = false;
+
   productChosen!: Product;
+
   limit = 8;
   offset = 0;
+
+  statusDetail: 'loading' | 'success' | 'error' | 'init' = 'init';
 
   constructor(
     private storeService: StoreService,
@@ -54,9 +59,41 @@ export class ProductsComponent implements OnInit {
   }
 
   onShowDetail(id: string) {
-    this.productsService.getProduct(id).subscribe((data) => {
-      this.toggleProductDetail();
-      this.productChosen = data;
+    this.statusDetail = 'loading';
+    this.toggleProductDetail();
+    this.productsService.getProduct(id).subscribe({
+      next: (v) => this.showDetailOk(v),
+      error: (e) => this.showDetailError(e),
+      complete: () => console.log('complete'),
+    });
+    //   .subscribe(
+    //   (data) => {
+    //     this.productChosen = data;
+    //     this.statusDetail = 'success';
+    //   },
+    //   (errorMsg) => {
+    //     this.productChosen = errorMsg;
+    //     window.alert(errorMsg);
+    //     this.statusDetail = 'error';
+    //   }
+    // );
+  }
+
+  showDetailOk(data: Product) {
+    this.statusDetail = 'success';
+    console.log('Producto obtenido:', data);
+    // this.toggleProductDetail();
+    this.productChosen = data;
+  }
+
+  showDetailError(error: any) {
+    this.statusDetail = 'error';
+    // this.productChosen = error;
+    Swal.fire({
+      title: 'Error',
+      text: error,
+      icon: 'error',
+      confirmButtonText: 'ok',
     });
   }
 

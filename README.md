@@ -1070,9 +1070,198 @@ It is possible to implement `retryWhen`, from rxjs, to add a condition for the r
 
 ### The CORS Problem
 
+📖 https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+
+Backend must enable cors. If it is not possible, then there is a solution for development.
+
+Angular can create a proxy for development purposes.
+
+First create a `proxy.config.json` in the root folder:
+
+```json
+{
+  "/api/*": {
+    "target": "https://young-sands-07814.herokuapp.com",
+    "secure": true,
+    "logLevel": "debug",
+    "changeOrigin": true
+  }
+}
+```
+
+This will change the origin of the request to match with the api domain.
+
+Then, the api direction can be modified from:
+
+```ts
+private apiUrl = 'https://young-sands-07814.herokuapp.com/api/products';
+```
+
+To:
+
+```ts
+private apiUrl = '/api/products';
+```
+
+A new script must be added into the package.json file:
+
+```json
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "start:proxy": "ng serve --proxy-config ./proxy.config.json", 👈
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "lint": "ng lint"
+  },
+```
+
+And finally run the project with:
+
+```
+npm run start:proxy
+```
+
 ### Handling environments
 
+Angular present two default environments, production and development. This can be found into `/src/environments` folder.
+
+The development configuration is going to be into the `environment.ts` file.
+
+```ts
+// /src/environments/environment.ts
+
+export const environment = {
+  production: false,
+  API_URL: "", 👈
+};
+```
+
+The production configuration is going to be into the `environment.prod.ts` file.
+
+```ts
+// /src/environments/environment.prod.ts
+
+export const environment = {
+  production: true,
+  API_URL: "https://young-sands-07814.herokuapp.com", 👈
+};
+```
+
+The API url is added into those files to manage the conection dinamically in both environments.
+
+For accomplish this, the API url must be configured as follows:
+
+```ts
+// src/app/services/products.service.ts
+
+...
+
+import { environment } from '../../environments/environment'; 👈
+
+...
+
+  private apiUrl = `${environment.API_URL}/api/products`; 👈
+
+```
+
+In this case, `ng serve` is going to run the project with the development configuration and `ng build` is going to run with the production configuration.
+
 ### Error handling
+
+Errors can be handled into the service file:
+
+```ts
+// src/app/services/products.service.ts
+
+getProduct(id: string) {
+  return this.http.get<Product>(`${this.apiUrl}/${id}`).pipe( 👈
+    catchError((error: HttpErrorResponse) => { 👈
+      if (error.status === HttpStatusCode.Conflict) { 👈
+        return throwError(() => 'algo esta mal en el server'); 👈
+      }
+      if (error.status === HttpStatusCode.NotFound) {
+        return throwError(() => 'no se encuentra el producto capo');
+      }
+      if (error.status === HttpStatusCode.Conflict) {
+        return throwError(() => 'no estas autorizado');
+      }
+      return throwError(() => 'Ups algo salio mal');
+    })
+  );
+}
+```
+
+To display an error message, sweetalert2 library is installed
+
+```
+npm install sweetalert2
+```
+
+Sweetalert2 has a lot of alerts available:
+
+📖 https://sweetalert2.github.io
+
+Into the controller:
+
+```ts
+import Swal from 'sweetalert2'; 👈
+
+...
+
+  export class ProductsComponent implements OnInit {
+
+    ...
+
+    statusDetail: 'loading' | 'success' | 'error' | 'init' = 'init'; 👈
+
+    ...
+
+    onShowDetail(id: string) {
+      this.statusDetail = 'loading';
+      this.toggleProductDetail();
+      this.productsService.getProduct(id).subscribe({
+        next: (v) => this.showDetailOk(v),
+        error: (e) => this.showDetailError(e),
+        complete: () => console.log('complete'),
+      });
+      //   .subscribe(                 <--- //depreciated
+      //   (data) => {
+      //     this.productChosen = data;
+      //     this.statusDetail = 'success';
+      //   },
+      //   (errorMsg) => {
+      //     this.productChosen = errorMsg;
+      //     window.alert(errorMsg);
+      //     this.statusDetail = 'error';
+      //   }
+      // );
+    }
+
+
+    showDetailOk(data: Product) {
+      this.statusDetail = 'success';
+      console.log('Producto obtenido:', data);
+      // this.toggleProductDetail();
+      this.productChosen = data;
+    }
+
+    showDetailError(error: Error) {
+      this.statusDetail = 'error';
+      // this.productChosen = errorProduct    <-- Pending. An error product must be shown
+      Swal.fire({
+        title: 'Error',
+        text: error,
+        icon: 'error',
+        confirmButtonText: 'ok',
+      });
+    }
+
+    ...
+
+  }
+```
 
 ### Transforming requests
 

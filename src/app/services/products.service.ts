@@ -1,12 +1,18 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { retry } from 'rxjs';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  HttpParams,
+  HttpStatusCode,
+} from '@angular/common/http';
+import { catchError, retry, throwError } from 'rxjs';
 
 import {
   Product,
   CreateProductDto,
   UpdateProductDto,
 } from '../models/product.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -14,7 +20,7 @@ import {
 export class ProductsService {
   constructor(private http: HttpClient) {}
 
-  private apiUrl = 'https://young-sands-07814.herokuapp.com/api/products';
+  private apiUrl = `${environment.API_URL}/api/products`;
 
   getAllProducts(limit?: number, offset?: number) {
     let params = new HttpParams();
@@ -32,7 +38,20 @@ export class ProductsService {
   // }
 
   getProduct(id: string) {
-    return this.http.get<Product>(`${this.apiUrl}/${id}`);
+    return this.http.get<Product>(`${this.apiUrl}/${id}`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === HttpStatusCode.Conflict) {
+          return throwError(() => 'algo esta mal en el server');
+        }
+        if (error.status === HttpStatusCode.NotFound) {
+          return throwError(() => 'no se encuentra el producto capo');
+        }
+        if (error.status === HttpStatusCode.Conflict) {
+          return throwError(() => 'no estas autorizado');
+        }
+        return throwError(() => 'Ups algo salio mal');
+      })
+    );
   }
 
   create(dto: CreateProductDto) {
