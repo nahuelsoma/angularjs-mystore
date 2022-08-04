@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 
 import { UsersService } from './services/users.service';
+import { FilesService } from './services/files.service';
 
 @Component({
   selector: 'app-root',
@@ -11,6 +12,7 @@ export class AppComponent {
   imgParent = 'https://picsum.photos/id/15/250';
   showImg = true;
   token = '';
+  imgRta = '';
 
   // onLoaded(img: string) {
   //   console.log(`Image ${img} is loaded from Parent`);
@@ -20,7 +22,10 @@ export class AppComponent {
   //   this.showImg = !this.showImg;
   // }
 
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private filesService: FilesService
+  ) {}
 
   createUser() {
     this.usersService
@@ -30,5 +35,25 @@ export class AppComponent {
         password: '123456',
       })
       .subscribe((data) => console.log(data));
+  }
+
+  downloadPdf() {
+    this.filesService
+      .getFile(
+        'my-file',
+        'https://young-sands-07814.herokuapp.com/api/files/dummy.pdf',
+        'application/pdf'
+      )
+      .subscribe();
+  }
+
+  onUpload(event: Event) {
+    const element = event.target as HTMLInputElement;
+    const file = element.files?.item(0);
+    if (file) {
+      this.filesService
+        .uploadFile(file)
+        .subscribe((rta) => (this.imgRta = rta.location));
+    }
   }
 }

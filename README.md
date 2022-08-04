@@ -1930,4 +1930,141 @@ import { checkTime } from "../interceptors/time.interceptor"; 👈
 
 ### Downloading files with Http
 
+For file downloading, plain html can be implemented:
+
+```html
+<p>
+  <a href="./src/assets/files/texto.txt" download>Download</a>
+</p>
+```
+
+Also, it can be done with a new service.
+
+```
+ng g s services/files
+```
+
+For doing this, install the file-saver dependency:
+
+```
+npm i file-saver
+npm install @types/file-saver --save-dev
+```
+
+Into the service file:
+
+```ts
+// src/app/services/file.service.ts
+
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http"; 👈
+import { saveAs } from "file-saver"; 👈
+import { tap, map } from "rxjs/operators"; 👈
+
+@Injectable({
+  providedIn: "root",
+})
+export class FilesService {
+  constructor(private http: HttpClient) {} 👈
+
+  getFile(name: string, url: string, type: string) { 👈
+    return this.http.get(url, { responseType: "blob" }).pipe( 👈
+      tap((content) => { 👈
+        const blob = new Blob([content], { type });
+        saveAs(blob, name);
+      }),
+      map(() => true) 👈
+    );
+  }
+}
+```
+
+Into the component files:
+
+```ts
+// src/app/app.component.ts
+
+import { FilesService } from './services/files.service'; 👈
+
+  ...
+
+    private filesService: FilesService 👈
+
+  ...
+
+  downloadPdf() { 👈
+    this.filesService
+      .getFile( 👈
+        'my-file',
+        'https://young-sands-07814.herokuapp.com/api/files/dummy.pdf',
+        'application/pdf'
+      )
+      .subscribe();
+  }
+
+  ...
+  s
+```
+
+```html
+<!-- src/app/app.component.html -->
+
+<button (click)="downloadPdf()">Descargar PDF</button>
+```
+
 ### Uploading files with Http
+
+Into the service file:
+
+```ts
+// src/app/services/file.service.ts
+
+import { environment } from './../../environments/environment'; 👈
+
+interface File { 👈
+  originalname: string;
+  filename: string;
+  location: string;
+}
+
+  ...
+
+  private apiUrl = `${environment.API_URL}/api/files`; 👈
+
+  ...
+
+  uploadFile(file: Blob) { 👈
+    const dto = new FormData();
+    dto.append('file', file);
+    return this.http.post<File>(`${this.apiUrl}/upload`, dto, { 👈
+      // headers: {
+      //   'Content-type': "multipart/form-data"
+      // }
+    });
+  }
+}
+
+```
+
+Into the component:
+
+```ts
+// src/app/app.component.ts
+
+  onUpload(event: Event) {
+    const element = event.target as HTMLInputElement; 👈
+    const file = element.files?.item(0);
+    if (file) {
+      this.filesService
+        .uploadFile(file) 👈
+        .subscribe((rta) => (this.imgRta = rta.location)); 👈
+    }
+  }
+```
+
+```html
+<!-- src/app/app.component.html -->
+
+<input type="file" (change)="onUpload($event)" />
+<img *ngIf="imgRta" [src]="ungRta" />
+```
