@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import Swal from 'sweetalert2';
 
 import {
@@ -14,18 +14,22 @@ import { ProductsService } from '../../services/products.service';
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.scss'],
 })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent {
   myShoppingCart: Product[] = [];
   total: number = 0;
-  products: Product[] = [];
+  @Input() products: Product[] = [];
+  @Input()
+  set productId(id: string | null) {
+    if (id) {
+      this.onShowDetail(id);
+    }
+  }
+  @Output() loadMore = new EventEmitter();
   // today = new Date();
   // date = new Date(2015, 1, 8);
   showProductDetail = false;
 
   productChosen!: Product;
-
-  limit = 8;
-  offset = 0;
 
   statusDetail: 'loading' | 'success' | 'error' | 'init' = 'init';
 
@@ -34,19 +38,6 @@ export class ProductsComponent implements OnInit {
     private productsService: ProductsService
   ) {
     this.myShoppingCart = this.storeService.getShoppingCart();
-  }
-
-  ngOnInit(): void {
-    this.loadMore();
-  }
-
-  loadMore() {
-    this.productsService
-      .getAllProducts(this.limit, this.offset)
-      .subscribe((data) => {
-        this.products = this.products.concat(data);
-        this.offset += this.limit;
-      });
   }
 
   onAddToCart(product: Product) {
@@ -60,7 +51,9 @@ export class ProductsComponent implements OnInit {
 
   onShowDetail(id: string) {
     this.statusDetail = 'loading';
-    this.toggleProductDetail();
+    if (!this.showProductDetail) {
+      this.toggleProductDetail();
+    }
     this.productsService.getProduct(id).subscribe({
       next: (v) => this.showDetailOk(v),
       error: (e) => this.showDetailError(e),
@@ -150,5 +143,9 @@ export class ProductsComponent implements OnInit {
       this.products.splice(productIndex, 1);
       this.showProductDetail = false;
     });
+  }
+
+  onLoadMore() {
+    this.loadMore.emit();
   }
 }

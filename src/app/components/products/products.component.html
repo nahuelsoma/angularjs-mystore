@@ -1,5 +1,5 @@
-<button (click)="createNewProduct()">Create product</button>
-<button (click)="onShowDetail('351532')">error</button>
+<!-- <button (click)="createNewProduct()">Create product</button> -->
+<!-- <button (click)="onShowDetail('351532')">error</button> -->
 <div class="products--grid">
   <app-product [product]="product"
     *ngFor="let product of products"
@@ -7,7 +7,7 @@
     (showProduct)="onShowDetail($event)"
     >
   </app-product>
-  <button (click)="loadMore()">Load more products</button>
+  <button (click)="onLoadMore()">Load more products</button>
 </div>
 <div class="product-detail" [class.active]="showProductDetail">
   <p>{{statusDetail}}</p>

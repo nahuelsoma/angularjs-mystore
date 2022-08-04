@@ -1175,6 +1175,10 @@ Errors can be handled into the service file:
 ```ts
 // src/app/services/products.service.ts
 
+import { catchError, retry, throwError, map, zip } from 'rxjs'; 👈
+
+...
+
 getProduct(id: string) {
   return this.http.get<Product>(`${this.apiUrl}/${id}`).pipe( 👈
     catchError((error: HttpErrorResponse) => { 👈
@@ -2068,3 +2072,135 @@ Into the component:
 <input type="file" (change)="onUpload($event)" />
 <img *ngIf="imgRta" [src]="ungRta" />
 ```
+
+# Angular Course: Lazy Loading and the Modular Programming
+
+## Route management
+
+### Creating routes
+
+First, create all pages components:
+
+```
+ng g c pages/home
+ng g c pages/notFound
+ng g c pages/category
+ng g c pages/mycart
+ng g c pages/login
+ng g c pages/register
+ng g c pages/recovery
+ng g c pages/profile
+```
+
+The new components are all imported into the app.module.ts file.
+
+Then, the `app-routing.module.ts` file can be used for routing configuration:
+
+```ts
+// src/app/app-routing.module.ts
+
+import { NgModule } from "@angular/core";
+import { RouterModule, Routes } from "@angular/router";
+
+import { HomeComponent } from "./pages/home/home.component";
+import { CategoryComponent } from "./pages/category/category.component";
+import { NotFoundComponent } from "./pages/not-found/not-found.component";
+import { MycartComponent } from "./pages/mycart/mycart.component";
+import { LoginComponent } from "./pages/login/login.component";
+import { RegisterComponent } from "./pages/register/register.component";
+import { RecoveryComponent } from "./pages/recovery/recovery.component";
+import { ProfileComponent } from "./pages/profile/profile.component";
+
+const routes: Routes = [
+  {
+    path: "home",
+    component: HomeComponent,
+  },
+  {
+    path: "category",
+    component: CategoryComponent,
+  },
+  {
+    path: "login",
+    component: LoginComponent,
+  },
+  {
+    path: "my-cart",
+    component: MycartComponent,
+  },
+  {
+    path: "register",
+    component: RegisterComponent,
+  },
+  {
+    path: "recovery",
+    component: RecoveryComponent,
+  },
+  {
+    path: "profile",
+    component: ProfileComponent,
+  },
+  {
+    path: "404",
+    component: NotFoundComponent,
+  },
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule],
+})
+export class AppRoutingModule {}
+```
+
+### Creating the Home Page
+
+### Categories pages
+
+### Avoiding double subscribing
+
+### RouterLink and RouterActive
+
+### 404 Path
+
+### Product details
+
+### URL Parameters
+
+## Modules
+
+### LazyLoading and CodeSplitting
+
+### Modular Programming
+
+### Nested Views
+
+### Creating the CMS Module
+
+### Creating a Website Module
+
+### Creating a Shared Module
+
+## Preloading Modules
+
+### Preloading modules
+
+### All Modules and Custom Strategy
+
+### QuickLink Strategy
+
+## Guardians
+
+### Learn about the Guardians
+
+### Implementing redirects
+
+### Login Status
+
+### Guard for Admin
+
+### CanDeactivate
+
+## Deployment
+
+### Netlify Deployment
