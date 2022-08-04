@@ -1387,13 +1387,544 @@ For example, into the `<component-name>.component.ts` file:
 
 ### Login and Auth handling
 
+Create 3 services:
+
+```
+ng g s services/auth && ng g s services/users && ng g s services/token
+```
+
+Create user model:
+
+```ts
+// src/app/models/user.model.ts
+
+export interface User { 👈
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+}
+
+export interface CreateUserDTO extends Omit<User, "id"> {} 👈
+```
+
+Create auth model:
+
+```ts
+// src/app/models/auth.model.ts
+
+export interface Auth { 👈
+  access_token: string;
+}
+```
+
+Into user service, configure the creation of a new user:
+
+```ts
+// src/app/services/user.service.ts
+
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+
+import { environment } from "./../../environments/environment";
+import { User, CreateUserDTO } from "./../models/user.model";
+
+@Injectable({
+  providedIn: "root",
+})
+export class UsersService {
+  private apiUrl = `${environment.API_URL}/api/users`;
+
+  constructor(private http: HttpClient) {}
+
+  create(dto: CreateUserDTO) {
+    return this.http.post<User>(this.apiUrl, dto); 👈
+  }
+
+  getAll() {
+    return this.http.get<User[]>(this.apiUrl);
+  }
+}
+```
+
+Into the auth service configure the login:
+
+```ts
+// src/app/services/auth.service.ts
+
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+
+import { environment } from "./../../environments/environment";
+import { Auth } from "./../models/auth.model";
+
+@Injectable({
+  providedIn: "root",
+})
+export class AuthService {
+  private apiUrl = `${environment.API_URL}/api/auth`;
+
+  constructor(private http: HttpClient) {}
+
+  login(email: string, password: string) {
+    return this.http.post<Auth>(`${this.apiUrl}/login`, { email, password });
+  }
+}
+```
+
+For simplicity, the service and auth services are called into the app component. But a user/auth component must be created.
+
+Into the app component:
+
+```ts
+// src/app/app.component.ts
+
+import { Component } from '@angular/core';
+
+import { AuthService } from './services/auth.service'; 👈
+import { UsersService } from './services/users.service'; 👈
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+})
+export class AppComponent {
+  constructor(
+    private authService: AuthService, 👈
+    private usersService: UsersService 👈
+  ) {}
+
+  createUser() {
+    this.usersService 👈
+      .create({ 👈
+        name: 'Nombre',
+        email: 'email@mail.com',
+        password: '123456',
+      })
+      .subscribe((data) => console.log(data));
+  }
+
+  login() {
+    this.authService 👈
+      .login('email@mail.com', '123456') 👈
+      .subscribe((data) => console.log(data.access_token));
+  }
+}
+
+```
+
+And they are excecuted throug a button into the app html:
+
+```html
+<!-- src/app/app.component.html -->
+
+<button (click)="createUser()">Create User</button>
+<button (click)="login()">Login</button>
+```
+
 ### Handling headers
+
+The authorization must be sent with this sintaxis:
+
+```
+Authorization: <type> <credentials>
+Authorization: Bearer ...
+```
+
+_There is a blank between `<type>` and `<credentials>`, this is important to avoid a typo error_
+
+First, the token must be initialized and saved into a new variable `token`:
+
+```ts
+// src/app/app.component.ts
+
+token = ""; 👈
+
+  ...
+
+  login() {
+    this.authService
+      .login('email@mail.com', '123456')
+      .subscribe((data) => (this.token = data.access_token)); 👈
+  }
+
+  getProfile() {
+    this.authService.getProfile(this.token).subscribe((profile) => { 👈
+      console.log(profile);
+    });
+  }
+
+  ...
+
+```
+
+Into the auth service:
+
+```ts
+// src/app/services/auth.service.ts
+
+  ...
+
+  getProfile(token: string) {
+    // const headers = new HttpHeaders();
+    // headers.set('Authorization',  `Bearer ${token}`);
+    return this.http.get<User>(`${this.apiUrl}/profile`, { 👈
+      headers: {
+        Authorization: `Bearer ${token}`, 👈
+        // 'Content-type': 'application/json'
+      },
+    });
+  }
+
+  ...
+
+```
+
+And excecuted throug a button into the app html:
+
+```html
+<!-- src/app/app.component.html -->
+
+<button (click)="getProfile()">Profile</button> 👈
+```
+
+To display the user email in the nav bar:
+
+```ts
+// src/app/component/nav/nav.component.ts
+
+import { Component, OnInit } from "@angular/core";
+
+import { StoreService } from "../../services/store.service";
+import { AuthService } from "../../services/auth.service"; 👈
+import { User } from "../../models/user.model";
+
+@Component({
+  selector: "app-nav",
+  templateUrl: "./nav.component.html",
+  styleUrls: ["./nav.component.scss"],
+})
+export class NavComponent implements OnInit {
+  activeMenu = false;
+  counter = 0;
+  token = ""; 👈
+  profile: User | null = null; 👈
+
+  constructor(
+    private storeService: StoreService,
+    private authService: AuthService 👈
+  ) {}
+
+  ngOnInit(): void {
+    // subscribe and await for changes
+    this.storeService.myCart$.subscribe((products) => {
+      this.counter = products.length;
+    });
+  }
+
+  toggleMenu() {
+    this.activeMenu = !this.activeMenu;
+  }
+
+  login() {
+    this.authService.login("email@mail.com", "123456").subscribe((data) => { 👈
+      this.token = data.access_token;
+      // a switchMap can be implemented here
+      this.getProfile();
+    });
+  }
+
+  getProfile() {
+    this.authService.getProfile(this.token).subscribe((user) => { 👈
+      console.log(user);
+      this.profile = user; 👈
+    });
+  }
+}
+```
+
+```html
+<!-- src/app/components/nav/nav.component.html -->
+
+<div class="account">
+  <button *ngIf="!token; else elseBlock" (click)="login()">Login</button> 👈
+  <ng-template #elseBlock>{{ profile?.email }}</ng-template> 👈
+</div>
+```
 
 ### Using interceptors
 
+Interceptors are between the App and the Backend
+
+To generate a new interceptor with Angular CLI:
+
+```
+ng g interceptor interceptors/time --flat
+```
+
+The time interceptor looks like this:
+
+```ts
+// src/app/interceptors/time.interceptor.ts
+
+import { Injectable } from "@angular/core";
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptor,
+} from "@angular/common/http";
+import { Observable } from "rxjs";
+import { tap } from "rxjs/operators";
+
+@Injectable()
+export class TimeInterceptor implements HttpInterceptor {
+  constructor() {}
+
+  intercept(
+    request: HttpRequest<unknown>,
+    next: HttpHandler
+  ): Observable<HttpEvent<unknown>> {
+    const start = performance.now(); 👈
+    return next.handle(request).pipe( 👈
+      tap(() => {
+        const time = performance.now() - start + "ms";
+        console.log(request.url, time);
+      })
+    );
+  }
+}
+```
+
+_`tap` can be used to excecute certain code without a response to be sent or a modification to be performed to the data._
+
+The interceptor must be provided to the app manually into the app module file:
+
+```ts
+//src/app/app.module.ts
+
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http'; 👈
+
+import { TimeInterceptor } from './interceptors/time.interceptor'; 👈
+
+@NgModule({
+
+  ...
+
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: TimeInterceptor, multi: true }, 👈
+  ],
+
+  ...
+
+})
+export class AppModule {}
+```
+
+This interceptor will show the time needed to perform a request in the console.
+
+```
+/api/products 0.8000000715255737ms
+/api/products 1197.4000000953674ms
+```
+
 ### Sending token with an interceptor
 
+The interceptor feature will be used to save and check for the token in localstorage.
+
+Into the token service, create the functions to save and get the token:
+
+```ts
+// src/app/services/token.service.ts
+
+import { Injectable } from "@angular/core";
+
+@Injectable({
+  providedIn: "root",
+})
+export class TokenService {
+  constructor() {}
+
+  saveToken(token: string) {
+    localStorage.setItem("token", token); 👈
+  }
+
+  getToken() {
+    const token = localStorage.getItem("token"); 👈
+    return token;
+  }
+}
+```
+
+Into the auth service, get the token:
+
+```ts
+// src/app/services/auth.service.ts
+
+  ...
+
+  login(email: string, password: string) {
+    return this.http
+      .post<Auth>(`${this.apiUrl}/login`, { email, password })
+      .pipe(
+        tap((response) => this.tokenService.saveToken(response.access_token)) 👈
+      );
+  }
+
+  ...
+
+```
+
+Now, create a new interceptor to check the token:
+
+```
+ng g interceptor interceptors/token --flat
+```
+
+Into the interceptor, we get the token and if there is a token, we clone the request and add the authorization to the header:
+
+```ts
+// src/app/interceptors/token.interceptor.ts
+
+import { Injectable } from "@angular/core";
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptor,
+} from "@angular/common/http";
+import { Observable } from "rxjs";
+
+import { TokenService } from "./../services/token.service"; 👈
+
+@Injectable()
+export class TokenInterceptor implements HttpInterceptor {
+  constructor(private tokenService: TokenService) {} 👈
+
+  intercept(
+    request: HttpRequest<unknown>,
+    next: HttpHandler
+  ): Observable<HttpEvent<unknown>> {
+    request = this.addToken(request); 👈
+    return next.handle(request);
+  }
+
+  private addToken(request: HttpRequest<unknown>) {
+    const token = this.tokenService.getToken(); 👈
+    if (token) {
+      const authReq = request.clone({ 👈
+        headers: request.headers.set("Authorization", `Bearer ${token}`), 👈
+      });
+      return authReq; 👈
+    }
+    return request;
+  }
+}
+```
+
+Finally, add the provider into the app module:
+
+```ts
+//src/app/app.module.ts
+
+import { TokenInterceptor } from './interceptors/time.interceptor'; 👈
+
+@NgModule({
+
+  ...
+
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: TokenInterceptor, multi: true }, 👈
+  ],
+
+  ...
+
+})
+export class AppModule {}
+```
+
 ### Creating an interceptor context
+
+To intercept olny certain requests, context can be implemented.
+
+Into the interceptor file:
+
+```ts
+// src/app/interceptors/time.interceptor.ts
+
+import { Injectable } from '@angular/core';
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptor,
+  HttpContext, 👈
+  HttpContextToken, 👈
+} from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+
+const CHECK_TIME = new HttpContextToken<boolean>(() => false); // "false" means disabled by default 👈
+
+export function checkTime() {
+  return new HttpContext().set(CHECK_TIME, true); // "true" means enable when called into the request 👈
+}
+
+@Injectable()
+export class TimeInterceptor implements HttpInterceptor {
+  constructor() {}
+
+  intercept(
+    request: HttpRequest<unknown>,
+    next: HttpHandler
+  ): Observable<HttpEvent<unknown>> {
+    if (request.context.get(CHECK_TIME)) { 👈
+      const start = performance.now();
+      return next.handle(request).pipe( 👈
+        tap(() => {
+          const time = performance.now() - start + 'ms';
+          console.log(request.url, time);
+        })
+      );
+    }
+    return next.handle(request); 👈
+  }
+}
+```
+
+To assign it to certain requests, it should be implemented into each request into the service file.
+
+```ts
+
+...
+
+import { checkTime } from "../interceptors/time.interceptor"; 👈
+
+  ...
+
+  getAllProducts(limit?: number, offset?: number) {
+    let params = new HttpParams();
+    if (limit && (offset || offset === 0)) {
+      params = params.set('limit', limit);
+      params = params.set('offset', offset);
+    }
+    return this.http.get<Product[]>(this.apiUrl, { params, context: checkTime() }).pipe( 👈
+      retry(3), // retry request 3 times (4 total)
+      map((products) =>
+        products.map((item) => {
+          return {
+            ...item,
+            taxes: 0.19 * item.price,
+          };
+        })
+      )
+    );
+  }
+
+  ...
+
+```
 
 ## Files
 

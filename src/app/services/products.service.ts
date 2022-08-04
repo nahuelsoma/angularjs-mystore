@@ -14,6 +14,7 @@ import {
   UpdateProductDto,
 } from '../models/product.model';
 import { environment } from '../../environments/environment';
+import { checkTime } from '../interceptors/time.interceptor';
 
 @Injectable({
   providedIn: 'root',
@@ -29,17 +30,19 @@ export class ProductsService {
       params = params.set('limit', limit);
       params = params.set('offset', offset);
     }
-    return this.http.get<Product[]>(this.apiUrl, { params }).pipe(
-      retry(3), // retry request 3 times (4 total)
-      map((products) =>
-        products.map((item) => {
-          return {
-            ...item,
-            taxes: 0.19 * item.price,
-          };
-        })
-      )
-    );
+    return this.http
+      .get<Product[]>(this.apiUrl, { params, context: checkTime() })
+      .pipe(
+        retry(3), // retry request 3 times (4 total)
+        map((products) =>
+          products.map((item) => {
+            return {
+              ...item,
+              taxes: 0.19 * item.price,
+            };
+          })
+        )
+      );
   }
 
   // getProductsByPage(limit: number, offset: number) {
