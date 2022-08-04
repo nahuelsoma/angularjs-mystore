@@ -1265,7 +1265,123 @@ import Swal from 'sweetalert2'; 👈
 
 ### Transforming requests
 
+It`s better to obtain the information all processed from the backend, but if a transformation (or addition) of any information is needed, there is a method to do so.
+
+First of all, the `product.model.ts` file has to add the new parameter:
+
+```ts
+// src/app/models/product.model.ts
+
+export interface Product {
+  id: string;
+  title: string;
+  price: number;
+  images: string[];
+  description: string;
+  category: Category;
+  taxes?: number; 👈
+}
+```
+
+Then, the transformation occur into the service file:
+
+```ts
+// src/app/services/product.service.ts
+
+import { map } from 'rxjs'; 👈
+
+
+  getAllProducts(limit?: number, offset?: number) {
+    let params = new HttpParams();
+    if (limit && (offset || offset === 0)) {
+      params = params.set('limit', limit);
+      params = params.set('offset', offset);
+    }
+    return this.http.get<Product[]>(this.apiUrl, { params }).pipe( 👈
+      retry(3),
+      map((products) => 👈
+        products.map((item) => { 👈
+          return {
+            ...item,
+            taxes: 0.19 * item.price, 👈
+          };
+        })
+      )
+    );
+  }
+```
+
+And into the html file:
+
+```html
+<!-- /src/app/components/product/product.component.html -->
+
+<app-img *ngIf="product.images.length > 0" [imge]="product.images[0]"></app-img>
+<h3>{{ product.title }}</h3>
+<p>Price: {{ product.price | currency:'USD ' }}</p>
+<p *ngIf="product.taxes" 👈>Taxes: {{ product.taxes 👈 | currency:'USD ' }}</p>
+<button (click)="onShowDetail()">View more details</button>
+<button (click)="addToCart()">Add to cart</button>
+```
+
 ### Preventing callback hell
+
+In the case where is needed to excecute multiple requests, the way to avoid the callback hell into observables is using `rxjs`.
+
+`switchMap` method is used when one action depends on the previous action.
+
+`zip` is used when actions don't depend on each other.
+
+For example, into the `<service-name>.service.ts` file:
+
+```ts
+import { switchMap } from 'rxjs/operators'; 👈
+import { zip } from 'rxjs'; 👈
+
+  ...
+
+  fetchReadAndUpdate(id: string, dto: UpdateProductDto) {
+    return zip(this.getProduct(id), this.update(id, dto)); 👈
+  }
+
+  fetchReadAndUpdatePromise(id: string, dto: UpdateProductDto) {
+    return this.getProduct(id).pipe(
+      switchMap((product) => this.update(product.id, dto)) 👈
+    );
+  }
+
+  ...
+
+```
+
+For example, into the `<component-name>.component.ts` file:
+
+```ts
+// .../<component-name>.component.ts
+
+  ...
+
+  reandAndUpdate(id: string) {
+    this.productsService
+      .fetchReadAndUpdate(id, { title: 'change' }) 👈
+      .subscribe((response) => {
+        const getResponse = response[0];
+        const updateResponse = response[1];
+        console.log(getResponse, updateResponse);
+      });
+  }
+
+  reandAndUpdatePromise(id: string) {
+    this.productsService
+      .fetchReadAndUpdatePromise(id, { title: 'change' }) 👈
+      .subscribe((data) => {
+        console.log(data);
+      });
+  }
+
+  ...
+
+```
 
 ## Auth
 

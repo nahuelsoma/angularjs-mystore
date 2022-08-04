@@ -97,6 +97,23 @@ export class ProductsComponent implements OnInit {
     });
   }
 
+  reandAndUpdate(id: string) {
+    this.productsService
+      .fetchReadAndUpdate(id, { title: 'change' })
+      .subscribe((response) => {
+        const getResponse = response[0];
+        const updateResponse = response[1];
+      });
+  }
+
+  reandAndUpdatePromise(id: string) {
+    this.productsService
+      .fetchReadAndUpdatePromise(id, { title: 'change' })
+      .subscribe((data) => {
+        console.log(data);
+      });
+  }
+
   createNewProduct() {
     const product: CreateProductDto = {
       title: 'The product to be found 513213513541',

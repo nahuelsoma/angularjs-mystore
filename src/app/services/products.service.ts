@@ -5,7 +5,8 @@ import {
   HttpParams,
   HttpStatusCode,
 } from '@angular/common/http';
-import { catchError, retry, throwError } from 'rxjs';
+import { catchError, retry, throwError, map, zip } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import {
   Product,
@@ -28,7 +29,17 @@ export class ProductsService {
       params = params.set('limit', limit);
       params = params.set('offset', offset);
     }
-    return this.http.get<Product[]>(this.apiUrl, { params }).pipe(retry(3)); // retry request 3 times (4 total)
+    return this.http.get<Product[]>(this.apiUrl, { params }).pipe(
+      retry(3), // retry request 3 times (4 total)
+      map((products) =>
+        products.map((item) => {
+          return {
+            ...item,
+            taxes: 0.19 * item.price,
+          };
+        })
+      )
+    );
   }
 
   // getProductsByPage(limit: number, offset: number) {
@@ -64,5 +75,15 @@ export class ProductsService {
 
   delete(id: string) {
     return this.http.delete<boolean>(`${this.apiUrl}/${id}`);
+  }
+
+  fetchReadAndUpdate(id: string, dto: UpdateProductDto) {
+    return zip(this.getProduct(id), this.update(id, dto));
+  }
+
+  fetchReadAndUpdatePromise(id: string, dto: UpdateProductDto) {
+    return this.getProduct(id).pipe(
+      switchMap((product) => this.update(product.id, dto))
+    );
   }
 }
