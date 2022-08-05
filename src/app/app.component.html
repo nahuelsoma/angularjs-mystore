@@ -3,11 +3,11 @@
 <p>{{ showImg }}</p>
 <app-img *ngIf="showImg" (loaded)="onLoaded($event)" [imge]="imgParent"></app-img>
 <hr /> -->
-<!-- <button (click)="createUser()">Create User</button> -->
+<button (click)="createUser()">Create User</button>
 <!-- <button (click)="downloadPdf()">Descargar PDF</button> -->
 <!-- <input type="file" (change)="onUpload($event)"> -->
 <!-- <img *ngIf="imgRta" [src]="imgRta"> -->
 <!-- <app-products></app-products> -->
+<!-- <app-nav></app-nav> -->
 
-<app-nav></app-nav>
 <router-outlet></router-outlet>

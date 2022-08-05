@@ -1,14 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
 import { UsersService } from './services/users.service';
 import { FilesService } from './services/files.service';
+import { AuthService } from './services/auth.service';
+import { TokenService } from './services/token.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   imgParent = 'https://picsum.photos/id/15/250';
   showImg = true;
   token = '';
@@ -24,8 +26,17 @@ export class AppComponent {
 
   constructor(
     private usersService: UsersService,
-    private filesService: FilesService
+    private filesService: FilesService,
+    private authService: AuthService,
+    private tokenService: TokenService
   ) {}
+
+  ngOnInit() {
+    const token = this.tokenService.getToken();
+    if (token) {
+      this.authService.getProfile().subscribe();
+    }
+  }
 
   createUser() {
     this.usersService
@@ -33,6 +44,7 @@ export class AppComponent {
         name: 'Nombre',
         email: 'email@mail.com',
         password: '123456',
+        role: 'customer',
       })
       .subscribe((data) => console.log(data));
   }

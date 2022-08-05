@@ -1,4 +1,4 @@
-This repository contains the project developed in the second and third part of the Angular course.
+This repository contains the project developed in the second, third and fourth part of the Angular course.
 
 The following is a step-by-step description of what was learned in each class.
 
@@ -2153,54 +2153,117 @@ const routes: Routes = [
 export class AppRoutingModule {}
 ```
 
-### Creating the Home Page
+### Creating the Home Page and the Categories pages
 
-### Categories pages
-
-### Avoiding double subscribing
+New pages are created to load custom information in each section.
 
 ### RouterLink and RouterActive
 
+This two features are used to navigate throug the app.
+
 ### 404 Path
 
-### Product details
-
-### URL Parameters
+The `not found` path must be located at the bottom of the routing list, this allows the app to redirect every miss request to a 404 page.
 
 ## Modules
 
 ### LazyLoading and CodeSplitting
 
+Separating into modules gives Angular the posibility to divide the js file into many js files to serve them when necesary. This optimize the loading of the app.
+
 ### Modular Programming
 
 ### Nested Views
 
-### Creating the CMS Module
+### Creating the CMS, Website and Shared Module
 
-### Creating a Website Module
+To create a new module with the Angular CLI:
 
-### Creating a Shared Module
+```
+ng g m cms --routing
+ng g m website --routing
+ng g m shared
+```
+
+The files are reorganized to perform a modular architecture.
 
 ## Preloading Modules
 
 ### Preloading modules
 
+There are different strategies to preload every module into the app. This can be configured into the routing modules.
+
 ### All Modules and Custom Strategy
 
+With the `PreloadAllModules` strategy, all app modules are loaded at once.
+
+The preload can be customized throug a `CustomPreloadService`. In this case, the logic is determined by the developer.
+
 ### QuickLink Strategy
+
+This strategy preload the modules that are accesible from the current user page, `ngx-quicklink` is used for this purpose.
+
+```
+npm i ngx-quicklink --save
+```
+
+Import the QuicklinkModule in each module file.
+
+Import the QuicklinkStrategy in each routing module file.
 
 ## Guardians
 
 ### Learn about the Guardians
 
+It can be used to protect certain pages. For example, the profile page.
+
+To create a new guard with Angular CLI:
+
+```
+ng g g guards/auth
+```
+
+Before creation, the CLI ask for the guard functionality:
+
+- CanActivate
+- CanActivateChild
+- CanDeactivate
+- CanLoad
+
+_This functionalities can be activated as needed with the spacebar_
+
+In this case, `CanActivate` guard is used:
+
+The guard is implemented into the routing module file.
+
+The condition is defined into the guard's file.
+
 ### Implementing redirects
+
+`Router` from `@angular/router` is used to perform redirects.
+
+This can be seen into the nav component, into the logout action.
 
 ### Login Status
 
+Create a new observable `user$` into auth service.
+
 ### Guard for Admin
 
+Create a new guard for admin
+
+```
+ng g g guards/admin
+```
+
+This guard is implemented into the cms module.
+
 ### CanDeactivate
+
+This guard is implemented to prevent an exit from certain pages. For example, when users try to exit from a form page, warning if they really want to exit.
 
 ## Deployment
 
 ### Netlify Deployment
+
+The `netlify.toml` file is created to customize the deployment configuration.
