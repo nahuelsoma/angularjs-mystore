@@ -8,8 +8,6 @@ The following is a step-by-step description of what was learned in each class.
 
 ## Components
 
-### Everything you will learn about components and services in ### Angular
-
 📖 https://angular.io/guide/component-overview
 
 Components are the main building block for Angular applications. Each component consists of:
@@ -38,7 +36,7 @@ Or in a short statement
 ng g c <component-name>
 ```
 
-Where `component-name>` is the name of your component.
+Where `<component-name>` is the name of your component.
 
 By default, this command creates the following:
 
